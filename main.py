@@ -19,9 +19,9 @@ def main():
     print(">> Voy a cargar instancias...", flush=True)
 
     instances = [
-        (print(">> Cargando eil51...", flush=True), load_tsp("data/eil51.tsp", opt_known=None))[1],
-        (print(">> Cargando berlin52...", flush=True), load_tsp("data/berlin52.tsp", opt_known=None))[1],
-        (print(">> Cargando st70...", flush=True), load_tsp("data/st70.tsp", opt_known=None))[1],
+        (print(">> Cargando eil51...", flush=True), load_tsp("data/eil51.tsp", opt_known=426))[1],
+        (print(">> Cargando berlin52...", flush=True), load_tsp("data/berlin52.tsp", opt_known=7542))[1],
+        (print(">> Cargando st70...", flush=True), load_tsp("data/st70.tsp", opt_known=675))[1],
     ]
 
     print(">> Instancias cargadas OK", flush=True)
@@ -111,8 +111,33 @@ def main():
     )
     df_final.to_csv("results/final_runs.csv", index=False)
 
-    summary_final = summarize(df_final).sort_values(["instance", "algorithm"])
-    summary_final.to_csv("results/final_summary.csv", index=False)
+    # summary_final = summarize(df_final).sort_values(["instance", "algorithm"])
+    # summary_final.to_csv("results/final_summary.csv", index=False)
+
+    summary_final = summarize(df_final)
+
+    # Calcular GAP promedio por instancia y algoritmo
+    gap_mean = (
+        df_final.groupby(["instance", "algorithm"])["gap_percent"]
+        .mean()
+        .reset_index(name="gap_mean")
+    )
+
+    # Unir tablas
+    summary_final = summary_final.merge(
+        gap_mean,
+        on=["instance", "algorithm"],
+        how="left"
+    )
+
+    # Ordenar por mejor calidad
+    summary_final = summary_final.sort_values(["instance", "best_mean"])
+
+    # Guardar versión completa tipo paper
+    summary_final.to_csv("results/final_summary_with_gap.csv", index=False)
+
+    print("\n=== TABLA FINAL TIPO PAPER ===")
+    print(summary_final)
 
     # plots finales
     for inst in instances:
